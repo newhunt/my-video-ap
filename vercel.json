@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/download", "destination": "/api/index.py" }
+    { "source": "/download", "destination": "/api/index.py" },
+    { "source": "/proxy", "destination": "/api/index.py" }
   ]
 }
