@@ -12,9 +12,9 @@ def download():
         return jsonify({"status": "error", "message": "Link kosong"}), 400
 
     try:
-        # Memastikan format MP4 gabungan agar tidak 'Hanya Suara'
+        # PAKSA MENGAMBIL FORMAT MP4 YANG BERISI VIDEO + AUDIO
         ydl_opts = {
-            'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
+            'format': 'best[ext=mp4]/best', 
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True,
@@ -22,9 +22,12 @@ def download():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
+            # Mengambil direct_link yang sudah sukses muncul di JSON kamu
+            direct_link = info.get('url')
+            
             return jsonify({
                 "status": "success",
-                "direct_link": info.get('url')
+                "direct_link": direct_link
             })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
