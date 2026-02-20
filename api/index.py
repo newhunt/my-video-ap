@@ -29,11 +29,21 @@ def download():
 @app.route('/proxy')
 def proxy():
     target_url = request.args.get('url')
-    # Meniru browser asli agar tidak kena 403
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+        'Referer': 'https://www.tiktok.com/'
     }
-    req = requests.get(target_url, headers=headers, stream=True)
-    return Response(req.iter_content(chunk_size=1024), 
-                    content_type=req.headers['Content-Type'],
-                    headers={"Content-Disposition": "attachment; filename=video.mp4"})
+    
+    # Menggunakan stream=True dan meneruskan data secara langsung
+    req = requests.get(target_url, headers=headers, stream=True, timeout=10)
+    
+    def generate():
+        for chunk in req.iter_content(chunk_size=4096):
+            yield chunk
+
+    return Response(generate(), 
+                    content_type=req.headers.get('Content-Type', 'video/mp4'),
+                    headers={
+                        "Content-Disposition": "attachment; filename=video.mp4",
+                        "Access-Control-Allow-Origin": "*"
+                    })
