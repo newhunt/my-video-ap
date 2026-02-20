@@ -3,16 +3,15 @@ from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
-CORS(app) # Menghubungkan script Blogspot ke Python ini
+CORS(app)
 
 @app.route('/download', methods=['GET'])
 def download():
     video_url = request.args.get('url')
     if not video_url:
-        return jsonify({"status": "error", "message": "Link kosong"}), 400
+        return jsonify({"status": "error", "message": "Link tidak boleh kosong"}), 400
 
     try:
-        # Mengambil MP4 yang sudah berisi Video + Audio
         ydl_opts = {
             'format': 'best[ext=mp4]/best',
             'quiet': True,
@@ -29,6 +28,6 @@ def download():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# Menjalankan aplikasi di Vercel
-def handler(event, context):
-    return app(event, context)
+# Opsional: Hanya untuk testing lokal, tidak akan mengganggu Vercel
+if __name__ == "__main__":
+    app.run(debug=True)
