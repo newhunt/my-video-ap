@@ -9,12 +9,12 @@ CORS(app)
 def download():
     video_url = request.args.get('url')
     if not video_url:
-        return jsonify({"status": "error", "message": "Link tidak boleh kosong"}), 400
+        return jsonify({"status": "error", "message": "Link kosong"}), 400
 
     try:
-        # MEMAKSA FORMAT MP4 YANG SUDAH BERISI VIDEO + AUDIO
+        # Memastikan format MP4 gabungan agar tidak 'Hanya Suara'
         ydl_opts = {
-            'format': 'best[ext=mp4]/best', 
+            'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True,
@@ -22,15 +22,9 @@ def download():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
-            # Mengambil direct link video asli
-            direct_link = info.get('url')
-            
             return jsonify({
                 "status": "success",
-                "direct_link": direct_link
+                "direct_link": info.get('url')
             })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
-def handler(event, context):
-    return app(event, context)
