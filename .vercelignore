@@ -1,56 +1,7 @@
-# Python cache
-__pycache__/
+__pycache__
 *.pyc
-*.pyo
-*.pyd
-
-# Environment
 .env
-.env.local
-.env.*.local
-
-# Version control
-.git/
-.gitignore
-.github/
-
-# Documentation
+.git
 README.md
-README.txt
-docs/
-
-# Logs
-*.log
-logs/
-
-# Local development
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Virtual environment
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# OS files
 .DS_Store
-Thumbs.db
-desktop.ini
-
-# Dependencies (optional - biasanya di-exclude)
-node_modules/
-package-lock.json
-
-# Testing
-.coverage
-.pytest_cache/
-.mypy_cache/
-
-# Backup
-*.bak
-*.backup
+*.log
