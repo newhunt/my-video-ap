@@ -1,2 +1,4 @@
-yt-dlp==2024.4.9
-certifi==2024.2.2
+yt-dlp==2026.03.07
+certifi==2025.01.31
+requests==2.31.0
+urllib3==2.1.0
