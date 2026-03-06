@@ -1,87 +1,81 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from http.server import BaseHTTPRequestHandler
+import json
 import yt_dlp
-import os
+from urllib.parse import urlparse, parse_qs
 
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/')
-def home():
-    return jsonify({
-        "status": "online",
-        "message": "Video Downloader API is running",
-        "endpoints": {
-            "/download": "GET with ?url=VIDEO_URL"
-        }
-    })
-
-@app.route('/download', methods=['GET'])
-def download():
-    video_url = request.args.get('url')
-    if not video_url:
-        return jsonify({"status": "error", "message": "Link kosong"}), 400
-
-    try:
-        # Opsi lengkap untuk yt-dlp
-        ydl_opts = {
-            'format': 'best[ext=mp4]/best',  # Prioritaskan MP4
-            'quiet': True,
-            'no_warnings': True,
-            'nocheckcertificate': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-            'extract_flat': False,
-            'force_generic_extractor': False,
-        }
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        # Set CORS headers
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Ekstrak info
-            info = ydl.extract_info(video_url, download=False)
-            
-            # Cari URL video terbaik
-            direct_link = None
-            
-            # Cek berbagai kemungkinan format
-            if 'url' in info:
-                direct_link = info['url']
-            elif 'formats' in info and len(info['formats']) > 0:
-                # Ambil format dengan video+audio
-                for f in info['formats']:
-                    if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
-                        direct_link = f.get('url')
-                        break
-                if not direct_link:
-                    direct_link = info['formats'][-1].get('url')
-            
-            if not direct_link:
-                return jsonify({
-                    "status": "error", 
-                    "message": "Tidak dapat menemukan URL video"
-                }), 404
-            
-            # Dapatkan info tambahan
-            video_info = {
-                "status": "success",
-                "direct_link": direct_link,
-                "title": info.get('title', 'Video'),
-                "duration": info.get('duration'),
-                "platform": info.get('extractor_key', 'unknown'),
-                "thumbnail": info.get('thumbnail')
+        # Parse URL
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        
+        # Handle root path
+        if parsed.path == '/' or parsed.path == '':
+            response = {
+                "status": "online",
+                "message": "Video Downloader API is running",
+                "endpoints": {
+                    "/download": "GET with ?url=VIDEO_URL"
+                }
             }
+            self.wfile.write(json.dumps(response).encode())
+            return
+        
+        # Handle download endpoint
+        if parsed.path == '/download':
+            video_url = params.get('url', [None])[0]
             
-            return jsonify(video_info)
+            if not video_url:
+                response = {"status": "error", "message": "URL parameter required"}
+                self.wfile.write(json.dumps(response).encode())
+                return
             
-    except Exception as e:
-        return jsonify({
-            "status": "error", 
-            "message": str(e),
-            "type": type(e).__name__
-        }), 500
-
-# Untuk Vercel serverless
-def handler(request):
-    return app(request)
-
-# Untuk local development
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+            try:
+                # yt-dlp options
+                ydl_opts = {
+                    'format': 'best[ext=mp4]/best',
+                    'quiet': True,
+                    'no_warnings': True,
+                    'nocheckcertificate': True,
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(video_url, download=False)
+                    
+                    # Cari URL video
+                    direct_link = info.get('url')
+                    if not direct_link and 'formats' in info:
+                        for f in info['formats']:
+                            if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
+                                direct_link = f.get('url')
+                                break
+                    
+                    response = {
+                        "status": "success",
+                        "direct_link": direct_link,
+                        "title": info.get('title', 'Video'),
+                        "platform": info.get('extractor_key', 'unknown'),
+                        "thumbnail": info.get('thumbnail')
+                    }
+                    
+            except Exception as e:
+                response = {
+                    "status": "error", 
+                    "message": str(e),
+                    "type": type(e).__name__
+                }
+            
+            self.wfile.write(json.dumps(response).encode())
+            return
+        
+        # 404 for other paths
+        self.send_response(404)
+        self.end_headers()
+        self.wfile.write(json.dumps({"error": "Not found"}).encode())
