@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.env
+.git
+README.md
+.DS_Store
+node_modules
+.gitignore
+*.log
+local_settings.py
+*.bak
